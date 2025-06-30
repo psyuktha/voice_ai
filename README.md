@@ -20,7 +20,6 @@ This project is a Voice AI Chatbot that can make phone calls and coordinate task
 ## 🔧 1. Vapi Voice AI Agent (Using Vapi API)
 
 ### ✅ Features
-- Uses Vapi’s low-code voice workflows to place calls.
 - Handles backend logic with FastAPI.
 - Generates post-call summaries stored in `response.json`.
 
