@@ -59,3 +59,57 @@
   "notes": "Customer is looking for the price of a slice, but doesn't specify what kind of slice or which bakery.",
   "natural_language_summary": "The customer inquired about the price of a slice. However, they did not specify the type of slice or the bakery. No action was taken as the request was too vague."
 }
+{
+  "intent": "Appointment",
+  "entities": {
+    "product": "Lenovo laptop",
+    "purpose": "personal use",
+    "price_range_min": "10000",
+    "price_range_max": "20000",
+    "location": "10002 area",
+    "timeframe": "end of next month"
+  },
+  "status": "Appointment pending",
+  "action_taken": "Gathered appointment booking details",
+  "notes": "Customer specified Lenovo laptop, personal use, price range, location and timeframe.",
+  "natural_language_summary": "The user wants to schedule an appointment to book a Lenovo laptop for personal use. The desired price range is between 10000 and 20000, and the location is the 10002 area, with a target booking date by the end of next month."
+}
+
+{
+  "intent": "Inquiry",
+  "entities": {
+    "company": "PVR Alu",
+    "request": "cancellation policy"
+  },
+  "status": "Information unavailable",
+  "action_taken": "None",
+  "notes": "User inquired about the cancellation policy at PVR Alu.",
+  "natural_language_summary": "The user called to inquire about the cancellation policy at PVR Alu. The information requested was unavailable during the call. No actions were taken as a result."
+}
+
+{
+  "intent": "{{intent}}",
+  "entities": {
+    {{entities}}
+  },
+  "status": "{{status}}",
+  "action_taken": "{{action_taken}}",
+  "notes": "{{notes}}",
+  "natural_language_summary": "{{natural_language_summary}}"
+}
+```json
+{
+  "intent": "Appointment",
+  "entities": {
+    "destination": "Mars",
+    "duration": "one month",
+    "start_date": "July 2nd",
+    "hotel": "Pluto Hotel",
+    "room_preferences": "no specific preferences"
+  },
+  "status": "Appointment requested",
+  "action_taken": "Not specified, assumed to be scheduling",
+  "notes": "User is planning a month-long trip to Mars starting July 2nd, staying at the Pluto Hotel. No room preferences mentioned.",
+  "natural_language_summary": "The user called to schedule a trip to Mars. They plan to stay for one month, beginning on July 2nd, at the Pluto Hotel and have no specific room preferences."
+}
+```

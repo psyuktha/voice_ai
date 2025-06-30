@@ -1,0 +1,224 @@
+{
+  "name": "new",
+  "nodes": [
+    {
+      "name": "introduction",
+      "type": "conversation",
+      "isStart": true,
+      "metadata": {
+        "position": {
+          "x": -171.27878378571654,
+          "y": -136.73420696967312
+        }
+      },
+      "prompt": "Call the tool , save the users prompt into {{variable}} and pass it to the tool",
+      "model": {
+        "model": "gemini-2.0-flash",
+        "provider": "google",
+        "maxTokens": 250,
+        "temperature": 0.3
+      },
+      "variableExtractionPlan": {
+        "output": [
+          {
+            "type": "string",
+            "title": "variable",
+            "description": ""
+          }
+        ]
+      },
+      "messagePlan": {
+        "firstMessage": "Hello! I’m your voice assistant. Let me know what you’d like me to check or coordinate for you — do you have something in mind right now?"
+      }
+    },
+    {
+      "name": "apiRequest_1751296576287",
+      "type": "tool",
+      "metadata": {
+        "position": {
+          "x": 924.4789808528236,
+          "y": 100.97313540882533
+        }
+      },
+      "tool": {
+        "url": "https://certain-warriors-promises-spider.trycloudflare.com/get_intent_details",
+        "body": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "raw_intent": {
+              "type": "string",
+              "value": "{{variable}}",
+              "description": ""
+            }
+          }
+        },
+        "name": "refined",
+        "type": "apiRequest",
+        "method": "POST",
+        "function": {
+          "name": "untitled_tool",
+          "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "conversation_1751297180399",
+      "type": "conversation",
+      "metadata": {
+        "position": {
+          "x": -271.3347939036243,
+          "y": 455.33927501465985
+        }
+      },
+      "prompt": "as you recieve the tool response, keep asking all the follow up questions to get clarity on the user questtion. then tell you will perform the task. If there are no follow up questions then you can summarise and make the next tool call. If there is a new enquiry lead back to introduction node again.",
+      "model": {
+        "model": "gpt-4o",
+        "provider": "openai",
+        "maxTokens": 250,
+        "temperature": 0.3
+      },
+      "variableExtractionPlan": {
+        "output": [
+          {
+            "enum": [],
+            "type": "string",
+            "title": "history",
+            "description": ""
+          },
+          {
+            "type": "string",
+            "title": "variable",
+            "description": ""
+          }
+        ]
+      },
+      "messagePlan": {
+        "firstMessage": ""
+      }
+    },
+    {
+      "name": "apiRequest_1751297950104",
+      "type": "tool",
+      "metadata": {
+        "position": {
+          "x": -505,
+          "y": 1140
+        }
+      },
+      "tool": {
+        "url": "https://certain-warriors-promises-spider.trycloudflare.com/summarize",
+        "body": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "conversation": {
+              "type": "string",
+              "value": "{{history}}",
+              "description": ""
+            }
+          }
+        },
+        "name": "summary",
+        "type": "apiRequest",
+        "method": "POST",
+        "function": {
+          "name": "untitled_tool",
+          "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "transfer_1751307655751",
+      "type": "tool",
+      "metadata": {
+        "position": {
+          "x": -975.2773494878678,
+          "y": 1248.1696845066353
+        }
+      },
+      "tool": {
+        "type": "transferCall",
+        "function": {
+          "name": "untitled_tool",
+          "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {}
+          }
+        },
+        "messages": [],
+        "destinations": [
+          {
+            "type": "number",
+            "number": "+916361472456",
+            "transferPlan": {
+              "mode": "blind-transfer",
+              "sipVerb": "refer"
+            },
+            "numberE164CheckEnabled": true
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "apiRequest_1751296576287",
+      "to": "conversation_1751297180399",
+      "condition": {
+        "type": "ai",
+        "prompt": "if the user said yes"
+      }
+    },
+    {
+      "from": "introduction",
+      "to": "apiRequest_1751296576287",
+      "condition": {
+        "type": "ai",
+        "prompt": "user said yes"
+      }
+    },
+    {
+      "from": "conversation_1751297180399",
+      "to": "apiRequest_1751297950104",
+      "condition": {
+        "type": "ai",
+        "prompt": "user said yes"
+      }
+    },
+    {
+      "from": "conversation_1751297180399",
+      "to": "apiRequest_1751296576287",
+      "condition": {
+        "type": "ai",
+        "prompt": "user asked a question "
+      }
+    },
+    {
+      "from": "conversation_1751297180399",
+      "to": "transfer_1751307655751",
+      "condition": {
+        "type": "ai",
+        "prompt": "user need to talk to human"
+      }
+    },
+    {
+      "from": "transfer_1751307655751",
+      "to": "apiRequest_1751297950104",
+      "condition": {
+        "type": "ai",
+        "prompt": "user said yes"
+      }
+    }
+  ],
+  "globalPrompt": ""
+}
