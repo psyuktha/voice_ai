@@ -43,7 +43,7 @@ The backend server is not yet deployed due to ongoing testing. To try:
 2. Update the public URL in `vapi_workflow.json`:
    - Line 44 and Line 114 should point to the public webhook URL returned by `ngrok`/`cloudflared`.
 
-## 🌐 2. Gemini Vertex Voice Agent (Using Google Cloud Gemini)
+## 🌐 2. Using LLM as agent and tts,stt
 
 ### ✅ Features
 - Uses Gemini from Vertex AI for intent parsing and natural language interaction.
