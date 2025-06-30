@@ -83,11 +83,18 @@ Then expose it using `ngrok` or `cloudflared`.
 
 ```json
 [
-  {
-    "status": "Success",
-    "action": "Confirmed item left at hotel",
-    "summary": "Hotel staff confirmed Het’s jacket was left in Room 307 on Friday."
-  }
+ {
+  "intent": "Inquiry",
+  "entities": {
+    "service": "Darshan",
+    "location": "Balaji Temple, Trimal",
+    "date": "second week of next month"
+  },
+  "status": "Inquiry received",
+  "action_taken": "None",
+  "notes": "Customer is looking to book a pilgrimage for Darshan at Balaji Temple in Trimal during the second week of next month.",
+  "natural_language_summary": "The caller is inquiring about pilgrimage booking for Darshan at Balaji Temple in Trimal. They are interested in booking for the second week of next month. No action was taken during the call."
+}
 ]
 ```
 
