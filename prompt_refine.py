@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,7 +7,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import requests, os, json, io
 from fastapi.responses import StreamingResponse
-from typing import List, Dict
+from typing import List, Dict, Optional
 import uuid
 from datetime import datetime
 import atexit
@@ -17,6 +17,11 @@ load_dotenv()
 
 # Configure Google Generative AI
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Vapi Configuration
+VAPI_API_KEY = os.getenv("VAPI_API_KEY")
+VAPI_PHONE_NUMBER_ID = os.getenv("VAPI_PHONE_NUMBER_ID")
+VAPI_BASE_URL = "https://api.vapi.ai"
 
 app = FastAPI()
 
@@ -46,6 +51,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Pydantic Models ---
+class VapiCallRequest(BaseModel):
+    phone_number: str
+    name: Optional[str] = None
+    system_message: Optional[str] = None
+
+class VapiWebhookData(BaseModel):
+    type: str
+    call: Optional[Dict] = None
+    message: Optional[Dict] = None
 
 # In-memory conversation storage (in production, use a database)
 conversations: Dict[str, List[Dict]] = {}
@@ -204,7 +220,7 @@ Generate a natural response. You can ask follow-up questions if needed or provid
             f"https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x",
             headers={
                 "Accept": "audio/mpeg",
-                "xi-api-key": ELEVENLABS_API_KEY,,
+                "xi-api-key": ELEVENLABS_API_KEY,
                 "Content-Type": "application/json"
             },
             json={"text": bot_reply}
@@ -805,3 +821,333 @@ def calculate_conversation_duration(messages):
         return round(duration, 2)
     except:
         return 0
+
+# --- Vapi Integration ---
+VAPI_API_KEY = os.getenv("VAPI_API_KEY")
+VAPI_BASE_URL = "https://api.vapi.ai"
+
+# Vapi Assistant Configuration
+VAPI_ASSISTANT_CONFIG = {
+    "model": {
+        "provider": "openai",
+        "model": "gpt-3.5-turbo",
+        "temperature": 0.7,
+        "systemMessage": "You are a helpful voice AI assistant that can help with inquiries, appointments, lost items, and general customer service. Be friendly, concise, and professional."
+    },
+    "voice": {
+        "provider": "11labs",
+        "voiceId": "EXAVITQu4vr4xnSDxMaL"
+    },
+    "firstMessage": "Hello! This is your AI assistant. How can I help you today?",
+    "recordingEnabled": True,
+    "endCallOnSilence": True,
+    "silenceTimeoutSeconds": 30,
+    "maxDurationSeconds": 600,  # 10 minutes max
+    "backgroundSound": "office"
+}
+
+@app.post("/vapi/create-call")
+async def create_vapi_call(call_request: VapiCallRequest):
+    """Create a new phone call using Vapi"""
+    print(f"🔍 Received call request: {call_request}")
+    
+    if not VAPI_API_KEY or not VAPI_PHONE_NUMBER_ID:
+        print(f"❌ Missing config - API Key: {'Set' if VAPI_API_KEY else 'Missing'}, Phone ID: {'Set' if VAPI_PHONE_NUMBER_ID else 'Missing'}")
+        raise HTTPException(status_code=500, detail="Vapi API key or phone number ID not configured")
+    
+    try:
+        # Create a new session for this call
+        session_id = get_or_create_conversation()
+        print(f"✨ Created session: {session_id}")
+        
+        # Default system message if not provided
+        system_message = call_request.system_message or "You are a helpful AI assistant. Be polite, professional, and helpful."
+        
+        # Prepare the call payload with corrected structure
+        call_payload = {
+            "phoneNumberId": VAPI_PHONE_NUMBER_ID,
+            "customer": {
+                "number": call_request.phone_number
+            },
+            "assistant": {
+                "model": {
+                    "provider": "openai",
+                    "model": "gpt-3.5-turbo",
+                    "systemMessage": system_message
+                },
+                "voice": {
+                    "provider": "11labs", 
+                    "voiceId": ELEVENLABS_VOICE_ID
+                },
+                "firstMessage": "Hello! This is your AI assistant. How can I help you today?"
+            }
+        }
+        
+        # Add metadata if name is provided
+        if call_request.name:
+            call_payload["metadata"] = {
+                "session_id": session_id,
+                "customer_name": call_request.name
+            }
+        else:
+            call_payload["metadata"] = {
+                "session_id": session_id
+            }
+        
+        print(f"🚀 Sending payload to Vapi: {json.dumps(call_payload, indent=2)}")
+        
+        # Make the API call to Vapi
+        response = requests.post(
+            f"{VAPI_BASE_URL}/call",
+            headers={
+                "Authorization": f"Bearer {VAPI_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json=call_payload,
+            timeout=10
+        )
+        
+        print(f"📡 Vapi response status: {response.status_code}")
+        print(f"📡 Vapi response headers: {dict(response.headers)}")
+        print(f"📡 Vapi response body: {response.text}")
+        
+        if response.status_code == 201:
+            call_data = response.json()
+            print(f"📞 Created Vapi call: {call_data.get('id')} for session: {session_id}")
+            
+            # Add initial log to conversation
+            add_to_conversation(session_id, "system", f"Outbound call initiated to {call_request.phone_number}")
+            if call_request.name:
+                add_to_conversation(session_id, "system", f"Customer name: {call_request.name}")
+            
+            return {
+                "success": True,
+                "call_id": call_data.get("id"),
+                "session_id": session_id,
+                "status": call_data.get("status"),
+                "message": "Call initiated successfully"
+            }
+        else:
+            error_detail = f"Status: {response.status_code}, Body: {response.text}"
+            print(f"❌ Vapi call creation failed: {error_detail}")
+            
+            # Try to parse error response
+            try:
+                error_data = response.json()
+                error_message = error_data.get("message", error_data.get("error", "Unknown error"))
+            except:
+                error_message = response.text or "Unknown error"
+            
+            raise HTTPException(
+                status_code=response.status_code, 
+                detail=f"Vapi call creation failed: {error_message}"
+            )
+            
+    except requests.exceptions.Timeout:
+        print("❌ Request timeout")
+        raise HTTPException(status_code=408, detail="Request timeout - Vapi API is not responding")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Request error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
+    except Exception as e:
+        print(f"❌ Unexpected error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+@app.post("/vapi/webhook/{session_id}")
+async def vapi_webhook(session_id: str, request: Request):
+    """Handle Vapi webhooks for call events"""
+    try:
+        body = await request.json()
+        event_type = body.get("message", {}).get("type")
+        
+        print(f"🔔 Vapi webhook for session {session_id}: {event_type}")
+        
+        if event_type == "conversation-update":
+            # Handle conversation updates
+            conversation_data = body.get("message", {}).get("conversation", [])
+            
+            for message in conversation_data:
+                if message.get("role") == "user":
+                    add_to_conversation(session_id, "user", message.get("content", ""))
+                elif message.get("role") == "assistant":
+                    add_to_conversation(session_id, "assistant", message.get("content", ""))
+        
+        elif event_type == "call-ended":
+            # Handle call end
+            add_to_conversation(session_id, "system", "Call ended")
+            
+            # Auto-save conversation
+            filename = save_conversation(session_id)
+            print(f"💾 Auto-saved conversation to {filename}")
+        
+        elif event_type == "function-call":
+            # Handle function calls
+            function_call = body.get("message", {}).get("functionCall", {})
+            function_name = function_call.get("name")
+            parameters = function_call.get("parameters", {})
+            
+            print(f"🔧 Function call: {function_name} with params: {parameters}")
+            
+            # Execute the function
+            result = await process_function_call(function_name, parameters, session_id)
+            
+            # Return the result to Vapi
+            return {"result": result}
+        
+        return {"status": "received"}
+        
+    except Exception as e:
+        print(f"❌ Webhook error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Webhook processing failed: {str(e)}")
+
+@app.get("/vapi/call/{call_id}/status")
+async def get_call_status(call_id: str):
+    """Get the status of a Vapi call"""
+    try:
+        response = requests.get(
+            f"{VAPI_BASE_URL}/call/{call_id}",
+            headers={
+                "Authorization": f"Bearer {VAPI_API_KEY}"
+            }
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise HTTPException(status_code=response.status_code, detail="Failed to get call status")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting call status: {str(e)}")
+
+@app.post("/vapi/call/{call_id}/end")
+async def end_call(call_id: str):
+    """End a Vapi call"""
+    try:
+        response = requests.post(
+            f"{VAPI_BASE_URL}/call/{call_id}/end",
+            headers={
+                "Authorization": f"Bearer {VAPI_API_KEY}"
+            }
+        )
+        
+        if response.status_code == 200:
+            return {"success": True, "message": "Call ended successfully"}
+        else:
+            raise HTTPException(status_code=response.status_code, detail="Failed to end call")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error ending call: {str(e)}")
+
+async def process_function_call(function_name: str, parameters: dict, session_id: str):
+    """Process function calls from Vapi (e.g., booking appointments, checking availability)"""
+    
+    if function_name == "book_appointment":
+        # Example function for booking appointments
+        date = parameters.get("date")
+        time = parameters.get("time")
+        service = parameters.get("service")
+        
+        # Add your booking logic here
+        result = f"Appointment booked for {service} on {date} at {time}"
+        add_to_conversation(session_id, "system", f"Function call: {function_name} - {result}")
+        
+        return {
+            "success": True,
+            "message": result,
+            "appointment_id": f"APT-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        }
+    
+    elif function_name == "check_availability":
+        # Example function for checking availability
+        date = parameters.get("date")
+        
+        # Add your availability checking logic here
+        result = f"Checking availability for {date}"
+        add_to_conversation(session_id, "system", f"Function call: {function_name} - {result}")
+        
+        return {
+            "available_slots": ["9:00 AM", "2:00 PM", "4:00 PM"],
+            "date": date
+        }
+    
+    elif function_name == "transfer_to_human":
+        # Example function for transferring to human agent
+        reason = parameters.get("reason", "Customer request")
+        
+        add_to_conversation(session_id, "system", f"Transfer to human requested: {reason}")
+        
+        return {
+            "transfer_initiated": True,
+            "reason": reason,
+            "message": "Transferring you to a human agent now"
+        }
+    
+    else:
+        return {"error": f"Unknown function: {function_name}"}
+
+# --- VAPI FRONTEND ---
+@app.get("/vapi")
+async def vapi_interface():
+    """Serve the Vapi phone call interface"""
+    return FileResponse('/Users/yuktha/Desktop/voice_ai/voice_ai/vapi_calls.html')
+
+# --- TEST ENDPOINTS ---
+@app.get("/vapi/test-config")
+async def test_vapi_config():
+    """Test Vapi configuration"""
+    return {
+        "vapi_api_key": "Set" if VAPI_API_KEY else "Missing",
+        "vapi_phone_number_id": "Set" if VAPI_PHONE_NUMBER_ID else "Missing",
+        "elevenlabs_voice_id": ELEVENLABS_VOICE_ID,
+        "base_url": VAPI_BASE_URL
+    }
+
+@app.post("/vapi/test-payload")
+async def test_vapi_payload(call_request: VapiCallRequest):
+    """Test what payload would be sent to Vapi without actually making the call"""
+    session_id = "test-session"
+    system_message = call_request.system_message or "You are a helpful AI assistant. Be polite, professional, and helpful."
+    
+    call_payload = {
+        "phoneNumberId": VAPI_PHONE_NUMBER_ID,
+        "customer": {
+            "number": call_request.phone_number
+        },
+        "assistant": {
+            "model": {
+                "provider": "openai",
+                "model": "gpt-3.5-turbo",
+                "systemMessage": system_message
+            },
+            "voice": {
+                "provider": "11labs", 
+                "voiceId": ELEVENLABS_VOICE_ID
+            },
+            "firstMessage": "Hello! This is your AI assistant. How can I help you today?"
+        }
+    }
+    
+    if call_request.name:
+        call_payload["metadata"] = {
+            "session_id": session_id,
+            "customer_name": call_request.name
+        }
+    else:
+        call_payload["metadata"] = {
+            "session_id": session_id
+        }
+    
+    return {
+        "would_send_payload": call_payload,
+        "request_received": {
+            "phone_number": call_request.phone_number,
+            "name": call_request.name,
+            "system_message": call_request.system_message
+        }
+    }
+
+# --- VAPI INTEGRATION ENDPOINTS ---

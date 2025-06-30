@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vapi AI Phone Calls</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .call-form {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #f0f0f0;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+            backdrop-filter: blur(5px);
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        button {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        button:hover {
+            background: #ff3742;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .call-status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status-active {
+            border-left: 4px solid #2ed573;
+        }
+
+        .status-ended {
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .active-calls {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .call-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .call-info {
+            flex: 1;
+        }
+
+        .call-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .call-actions button {
+            padding: 8px 16px;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        #status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-buttons a {
+            color: white;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-buttons a:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-buttons">
+            <a href="/">🏠 Voice Chat</a>
+            <a href="/simple">💬 Simple Chat</a>
+            <a href="/vapi-calls">📞 Phone Calls</a>
+        </div>
+
+        <h1>📞 AI Phone Calls with Vapi</h1>
+
+        <div class="call-form">
+            <h3>Make a New Call</h3>
+            <form id="callForm">
+                <div class="form-group">
+                    <label for="phoneNumber">Phone Number:</label>
+                    <input type="tel" id="phoneNumber" placeholder="+1234567890" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="assistantName">Assistant Name:</label>
+                    <input type="text" id="assistantName" placeholder="AI Assistant" value="AI Assistant">
+                </div>
+
+                <div class="form-group">
+                    <label for="callPurpose">Call Purpose:</label>
+                    <select id="callPurpose">
+                        <option value="general">General Inquiry</option>
+                        <option value="appointment">Appointment Booking</option>
+                        <option value="lost_item">Lost Item Inquiry</option>
+                        <option value="customer_service">Customer Service</option>
+                        <option value="custom">Custom (specify below)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="customPrompt">Custom Instructions (optional):</label>
+                    <textarea id="customPrompt" rows="4" placeholder="Specific instructions for the AI assistant..."></textarea>
+                </div>
+
+                <button type="submit" id="makeCallBtn">📞 Make Call</button>
+            </form>
+
+            <div id="status"></div>
+        </div>
+
+        <div class="call-status" id="callStatus">
+            <h3>Current Call Status</h3>
+            <div id="callDetails"></div>
+            <button onclick="endCurrentCall()" id="endCallBtn">🔴 End Call</button>
+        </div>
+
+        <div class="active-calls">
+            <h3>📋 Recent Calls</h3>
+            <div id="recentCalls">
+                <p style="opacity: 0.7; text-align: center;">No recent calls</p>
+            </div>
+            <button onclick="loadRecentCalls()">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <script>
+        let currentCallId = null;
+        let currentSessionId = null;
+
+        document.getElementById('callForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await makeCall();
+        });
+
+        async function makeCall() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const assistantName = document.getElementById('assistantName').value;
+            const callPurpose = document.getElementById('callPurpose').value;
+            const customPrompt = document.getElementById('customPrompt').value;
+
+            if (!phoneNumber) {
+                updateStatus('❌ Please enter a phone number');
+                return;
+            }
+
+            // Generate custom prompt based on purpose
+            let systemPrompt = getSystemPrompt(callPurpose, customPrompt);
+
+            try {
+                updateStatus('📞 Initiating call...');
+                document.getElementById('makeCallBtn').disabled = true;
+
+                const response = await fetch('/vapi/create-call', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        phone_number: phoneNumber,
+                        assistant_name: assistantName,
+                        custom_prompt: systemPrompt
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentCallId = data.call_id;
+                    currentSessionId = data.session_id;
+                    
+                    updateStatus(`✅ Call initiated successfully! Call ID: ${currentCallId}`);
+                    showCallStatus(data);
+                    
+                    // Start monitoring call status
+                    monitorCallStatus();
+                } else {
+                    updateStatus(`❌ Failed to initiate call: ${data.detail}`);
+                }
+            } catch (error) {
+                updateStatus(`❌ Error: ${error.message}`);
+            } finally {
+                document.getElementById('makeCallBtn').disabled = false;
+            }
+        }
+
+        function getSystemPrompt(purpose, custom) {
+            const prompts = {
+                general: "You are a helpful AI assistant. Be friendly and professional. Ask how you can help and listen carefully to the caller's needs.",
+                appointment: "You are an appointment booking assistant. Help the caller schedule appointments, check availability, and confirm details. Be efficient and ask for necessary information like preferred dates, times, and services.",
+                lost_item: "You are a lost item inquiry assistant. Help callers report lost items or inquire about found items. Ask for details like item description, when and where it was lost, and contact information.",
+                customer_service: "You are a customer service representative. Be empathetic, helpful, and solution-oriented. Listen to customer concerns and provide appropriate assistance or escalate when necessary.",
+                custom: custom || "You are a helpful AI assistant. Be professional and assist the caller with their needs."
+            };
+
+            return prompts[purpose] || prompts.general;
+        }
+
+        function showCallStatus(callData) {
+            const statusDiv = document.getElementById('callStatus');
+            const detailsDiv = document.getElementById('callDetails');
+            
+            detailsDiv.innerHTML = `
+                <p><strong>Call ID:</strong> ${callData.call_id}</p>
+                <p><strong>Phone Number:</strong> ${callData.phone_number}</p>
+                <p><strong>Session ID:</strong> ${callData.session_id}</p>
+                <p><strong>Status:</strong> <span id="currentStatus">${callData.status}</span></p>
+                <p><strong>Started:</strong> ${new Date().toLocaleTimeString()}</p>
+            `;
+            
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'call-status status-active';
+        }
+
+        async function monitorCallStatus() {
+            if (!currentCallId) return;
+
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/vapi/call/${currentCallId}/status`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const statusElement = document.getElementById('currentStatus');
+                        if (statusElement) {
+                            statusElement.textContent = data.status || 'active';
+                        }
+
+                        // If call ended, stop monitoring
+                        if (data.status === 'ended' || data.status === 'failed') {
+                            clearInterval(interval);
+                            handleCallEnded();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error monitoring call:', error);
+                }
+            }, 5000); // Check every 5 seconds
+        }
+
+        function handleCallEnded() {
+            const statusDiv = document.getElementById('callStatus');
+            statusDiv.className = 'call-status status-ended';
+            
+            const statusElement = document.getElementById('currentStatus');
+            if (statusElement) {
+                statusElement.textContent = 'ended';
+            }
+
+            // Generate summary after call ends
+            setTimeout(async () => {
+                if (currentSessionId) {
+                    try {
+                        const response = await fetch(`/conversations/${currentSessionId}/summary`);
+                        if (response.ok) {
+                            updateStatus('📋 Call summary generated successfully');
+                        }
+                    } catch (error) {
+                        console.error('Error generating summary:', error);
+                    }
+                }
+            }, 2000);
+
+            loadRecentCalls();
+        }
+
+        async function endCurrentCall() {
+            if (!currentCallId) {
+                updateStatus('❌ No active call to end');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/vapi/call/${currentCallId}/end`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    updateStatus('✅ Call ended successfully');
+                    handleCallEnded();
+                } else {
+                    updateStatus('❌ Failed to end call');
+                }
+            } catch (error) {
+                updateStatus(`❌ Error ending call: ${error.message}`);
+            }
+        }
+
+        async function loadRecentCalls() {
+            try {
+                const response = await fetch('/conversations/files');
+                const data = await response.json();
+                
+                const recentCallsDiv = document.getElementById('recentCalls');
+                
+                if (data.files && data.files.length > 0) {
+                    const callItems = data.files.slice(0, 5).map(file => {
+                        const savedTime = new Date(file.saved_at).toLocaleString();
+                        return `
+                            <div class="call-item">
+                                <div class="call-info">
+                                    <strong>Session:</strong> ${file.session_id.substring(0, 8)}...<br>
+                                    <strong>Messages:</strong> ${file.total_messages}<br>
+                                    <strong>Saved:</strong> ${savedTime}
+                                </div>
+                                <div class="call-actions">
+                                    <button onclick="generateSummary('${file.filename}')">📋 Summary</button>
+                                    <button onclick="viewConversation('${file.session_id}')">👁️ View</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    recentCallsDiv.innerHTML = callItems;
+                } else {
+                    recentCallsDiv.innerHTML = '<p style="opacity: 0.7; text-align: center;">No recent calls</p>';
+                }
+            } catch (error) {
+                console.error('Error loading recent calls:', error);
+            }
+        }
+
+        async function generateSummary(filename) {
+            try {
+                updateStatus('📋 Generating summary...');
+                const response = await fetch(`/conversations/file/${filename}/summary`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const summary = data.summary;
+                    updateStatus(`✅ Summary: ${summary.natural_summary}`);
+                } else {
+                    updateStatus('❌ Failed to generate summary');
+                }
+            } catch (error) {
+                updateStatus(`❌ Error: ${error.message}`);
+            }
+        }
+
+        function viewConversation(sessionId) {
+            // Open conversation view (you can implement this)
+            updateStatus(`👁️ Viewing conversation ${sessionId.substring(0, 8)}...`);
+        }
+
+        function updateStatus(message) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            
+            // Auto-clear status after 5 seconds
+            setTimeout(() => {
+                statusElement.textContent = '';
+            }, 5000);
+        }
+
+        // Load recent calls on page load
+        window.onload = function() {
+            loadRecentCalls();
+        };
+    </script>
+</body>
+</html>

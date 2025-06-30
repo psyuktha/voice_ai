@@ -1,0 +1,61 @@
+
+{
+  "status": "Appointment scheduled",
+  "action_taken": "Scheduled appointment with Dr. John",
+  "follow_up_required": false,
+  "notes": "Appointment is scheduled for tomorrow at 10 AM at Mariculi Bandana.",
+  "natural_language_summary": "The caller requested to schedule an appointment with Dr. John. An appointment was scheduled for the next day at 10 AM at Mariculi Bandana. No follow-up is needed."
+}
+
+{
+  "intent": "Rescheduling",
+  "entities": {
+    "appointment_type": "haircut",
+    "new_date": "Friday",
+    "new_time": "10:30 AM",
+    "service_location": "home salon"
+  },
+  "status": "Appointment rescheduled",
+  "action_taken": "Rescheduled appointment to Friday at 10:30 AM for a home salon haircut service.",
+  "notes": "Rescheduled for Friday at 10:30 AM. Home salon service specified.",
+  "natural_language_summary": "The customer requested to reschedule their haircut appointment. The appointment was successfully rescheduled to Friday at 10:30 AM for a home salon service."
+}
+
+{
+  "intent": "Appointment",
+  "entities": {
+    "time": "10 AM tomorrow",
+    "event": "wake me up from sleep",
+    "context": "exam"
+  },
+  "status": "Appointment scheduled",
+  "action_taken": "Scheduled a reminder",
+  "notes": "User wants a reminder to wake them up for an exam.",
+  "natural_language_summary": "The user requested a reminder to be set for 10 AM tomorrow to wake them up. This is likely because they have an exam."
+}
+
+{
+  "intent": "Inquiry",
+  "entities": {
+    "service": "Darshan",
+    "location": "Balaji Temple, Trimal",
+    "date": "second week of next month"
+  },
+  "status": "Inquiry received",
+  "action_taken": "None",
+  "notes": "Customer is looking to book a pilgrimage for Darshan at Balaji Temple in Trimal during the second week of next month.",
+  "natural_language_summary": "The caller is inquiring about pilgrimage booking for Darshan at Balaji Temple in Trimal. They are interested in booking for the second week of next month. No action was taken during the call."
+}
+
+
+{
+  "intent": "Inquiry",
+  "entities": {
+    "item": "slice",
+    "info_needed": "price"
+  },
+  "status": "Information unavailable",
+  "action_taken": "None",
+  "notes": "Customer is looking for the price of a slice, but doesn't specify what kind of slice or which bakery.",
+  "natural_language_summary": "The customer inquired about the price of a slice. However, they did not specify the type of slice or the bakery. No action was taken as the request was too vague."
+}
