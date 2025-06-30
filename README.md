@@ -27,6 +27,8 @@ This project is a Voice AI Chatbot that can make phone calls and coordinate task
 - `vapi_workflow.json`: Defines the conversation flow and logic.
 - `main.py`: FastAPI server for handling webhook callbacks.
 - `response.json`: Sample summaries of previously tested conversations.
+![image](https://github.com/user-attachments/assets/dbe2312a-e9f8-4f06-8100-d00eb3d1be3b)
+
 
 ### ☎️ Test Number
 +1 (956) 528-4589 (0019565284589 for international format)
