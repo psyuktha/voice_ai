@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice AI Conversation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .mic-container {
+            position: relative;
+            margin: 40px 0;
+        }
+
+        .mic-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .mic-button.recording {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            animation: pulse 2s infinite;
+        }
+
+        .mic-button.processing {
+            background: linear-gradient(45deg, #ffa726, #fb8c00);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status {
+            margin: 20px 0;
+            font-size: 1.2em;
+            min-height: 30px;
+            opacity: 0.8;
+        }
+
+        .conversation {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .message {
+            margin: 15px 0;
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 80%;
+        }
+
+        .user-message {
+            background: rgba(103, 126, 234, 0.3);
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .bot-message {
+            background: rgba(255, 255, 255, 0.2);
+            margin-right: auto;
+        }
+
+        .audio-player {
+            margin: 10px 0;
+            width: 100%;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .clear-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Voice AI</h1>
+        
+        <div class="mic-container">
+            <button id="micButton" class="mic-button">
+                <span id="micIcon">🎤</span>
+            </button>
+        </div>
+        
+        <div id="status" class="status">Click the microphone to start talking</div>
+        
+        <div id="conversation" class="conversation" style="display: none;">
+            <!-- Messages will be added here -->
+        </div>
+        
+        <div class="controls">
+            <button id="clearBtn" class="clear-btn">Clear Conversation</button>
+        </div>
+    </div>
+
+    <script>
+        class VoiceAI {
+            constructor() {
+                this.isRecording = false;
+                this.isProcessing = false;
+                this.mediaRecorder = null;
+                this.audioChunks = [];
+                
+                this.micButton = document.getElementById('micButton');
+                this.micIcon = document.getElementById('micIcon');
+                this.status = document.getElementById('status');
+                this.conversation = document.getElementById('conversation');
+                this.clearBtn = document.getElementById('clearBtn');
+                
+                this.initializeEventListeners();
+            }
+            
+            initializeEventListeners() {
+                this.micButton.addEventListener('click', () => this.toggleRecording());
+                this.clearBtn.addEventListener('click', () => this.clearConversation());
+            }
+            
+            async toggleRecording() {
+                if (this.isProcessing) return;
+                
+                if (this.isRecording) {
+                    this.stopRecording();
+                } else {
+                    await this.startRecording();
+                }
+            }
+            
+            async startRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.audioChunks = [];
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        this.audioChunks.push(event.data);
+                    };
+                    
+                    this.mediaRecorder.onstop = () => {
+                        this.processAudio();
+                    };
+                    
+                    this.mediaRecorder.start();
+                    this.isRecording = true;
+                    
+                    this.updateUI('recording', '🔴', 'Recording... Click to stop');
+                    
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    this.showError('Could not access microphone. Please check permissions.');
+                }
+            }
+            
+            stopRecording() {
+                if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                    this.mediaRecorder.stop();
+                    this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+                this.isRecording = false;
+                this.updateUI('processing', '⏳', 'Processing...');
+            }
+            
+            async processAudio() {
+                this.isProcessing = true;
+                
+                try {
+                    // Create audio blob
+                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                    
+                    // Create FormData for the API request
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.wav');
+                    
+                    // Send to conversation endpoint
+                    const response = await fetch('/conversation', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    // The response should be audio
+                    const audioArrayBuffer = await response.arrayBuffer();
+                    const audioBlob2 = new Blob([audioArrayBuffer], { type: 'audio/mpeg' });
+                    const audioUrl = URL.createObjectURL(audioBlob2);
+                    
+                    // Add to conversation (you might want to extract text from the response)
+                    this.addMessage('user', 'Voice message');
+                    this.addMessage('bot', 'AI Response', audioUrl);
+                    
+                    this.updateUI('idle', '🎤', 'Click to talk again');
+                    
+                } catch (error) {
+                    console.error('Error processing audio:', error);
+                    this.showError('Failed to process audio. Please try again.');
+                    this.updateUI('idle', '🎤', 'Click the microphone to start talking');
+                }
+                
+                this.isProcessing = false;
+            }
+            
+            updateUI(state, icon, statusText) {
+                this.micIcon.textContent = icon;
+                this.status.textContent = statusText;
+                
+                // Update button classes
+                this.micButton.className = 'mic-button';
+                if (state === 'recording') {
+                    this.micButton.classList.add('recording');
+                } else if (state === 'processing') {
+                    this.micButton.classList.add('processing');
+                }
+            }
+            
+            addMessage(type, text, audioUrl = null) {
+                this.conversation.style.display = 'block';
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}-message`;
+                
+                const textDiv = document.createElement('div');
+                textDiv.textContent = text;
+                messageDiv.appendChild(textDiv);
+                
+                if (audioUrl) {
+                    const audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = audioUrl;
+                    audio.className = 'audio-player';
+                    audio.autoplay = true; // Auto-play the response
+                    messageDiv.appendChild(audio);
+                }
+                
+                this.conversation.appendChild(messageDiv);
+                this.conversation.scrollTop = this.conversation.scrollHeight;
+            }
+            
+            clearConversation() {
+                this.conversation.innerHTML = '';
+                this.conversation.style.display = 'none';
+            }
+            
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = message;
+                
+                this.conversation.style.display = 'block';
+                this.conversation.appendChild(errorDiv);
+                
+                // Remove error after 5 seconds
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 5000);
+            }
+        }
+        
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new VoiceAI();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice AI Assistant with History</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        #recordBtn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+        }
+        
+        #recordBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.6);
+        }
+        
+        #recordBtn.recording {
+            background: #2ed573;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .conversation-history {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background: rgba(76, 175, 80, 0.3);
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message.assistant {
+            background: rgba(33, 150, 243, 0.3);
+            margin-right: auto;
+        }
+        
+        .message-role {
+            font-weight: bold;
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .session-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+        
+        .new-conversation-btn {
+            background: #3742fa;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .new-conversation-btn:hover {
+            background: #2f3542;
+            transform: translateY(-1px);
+        }
+        
+        #status {
+            text-align: center;
+            margin-top: 20px;
+            font-style: italic;
+            opacity: 0.8;
+        }
+        
+        audio {
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Voice AI Assistant</h1>
+        
+        <div class="session-info">
+            <span>Session: <span id="sessionId">Starting new conversation...</span></span>
+            <button class="new-conversation-btn" onclick="startNewConversation()">New Conversation</button>
+        </div>
+        
+        <div class="conversation-history" id="conversationHistory">
+            <div style="text-align: center; opacity: 0.6; font-style: italic;">
+                Your conversation will appear here...
+            </div>
+        </div>
+        
+        <div class="conversation-summary" id="conversationSummary" style="display: none; margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.2);">
+            <h3 style="margin-top: 0; color: #ff6b6b;">📋 Conversation Summary</h3>
+            <div id="summaryContent"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="recordBtn" onclick="toggleRecording()">🎤 Start Recording</button>
+            <button onclick="startNewConversation()" style="margin-left: 10px; background: #3742fa; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer;">🆕 New Conversation</button>
+            <button onclick="saveCurrentConversation()" style="margin-left: 10px; background: #2ed573; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer;">💾 Save Conversation</button>
+            <button onclick="generateSummary()" style="margin-left: 10px; background: #ff6b6b; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer;">📋 Generate Summary</button>
+        </div>
+        
+        <div id="status"></div>
+        
+        <audio id="responseAudio" controls style="display: none;"></audio>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let currentSessionId = null;
+
+        // Initialize new conversation on page load
+        window.onload = function() {
+            startNewConversation();
+        };
+
+        async function startNewConversation() {
+            try {
+                const response = await fetch('/conversation/new');
+                const data = await response.json();
+                currentSessionId = data.session_id;
+                document.getElementById('sessionId').textContent = currentSessionId.substring(0, 8) + '...';
+                
+                // Clear conversation history
+                document.getElementById('conversationHistory').innerHTML = 
+                    '<div style="text-align: center; opacity: 0.6; font-style: italic;">New conversation started. Say something!</div>';
+                
+                updateStatus('New conversation started');
+            } catch (error) {
+                console.error('Error starting new conversation:', error);
+                updateStatus('Error starting new conversation');
+            }
+        }
+
+        async function loadConversationHistory() {
+            if (!currentSessionId) return;
+            
+            try {
+                const response = await fetch(`/conversation/${currentSessionId}/history`);
+                const data = await response.json();
+                
+                const historyDiv = document.getElementById('conversationHistory');
+                historyDiv.innerHTML = '';
+                
+                if (data.messages.length === 0) {
+                    historyDiv.innerHTML = '<div style="text-align: center; opacity: 0.6; font-style: italic;">No messages yet. Start by recording your voice!</div>';
+                    return;
+                }
+                
+                data.messages.forEach(message => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${message.role}`;
+                    messageDiv.innerHTML = `
+                        <div class="message-role">${message.role === 'user' ? 'You' : 'Assistant'}</div>
+                        <div>${message.content}</div>
+                    `;
+                    historyDiv.appendChild(messageDiv);
+                });
+                
+                // Scroll to bottom
+                historyDiv.scrollTop = historyDiv.scrollHeight;
+            } catch (error) {
+                console.error('Error loading conversation history:', error);
+            }
+        }
+
+        async function toggleRecording() {
+            if (!isRecording) {
+                await startRecording();
+            } else {
+                await stopRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    await sendAudio(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                
+                const btn = document.getElementById('recordBtn');
+                btn.textContent = '⏹️ Stop Recording';
+                btn.classList.add('recording');
+                
+                updateStatus('Recording... Speak now!');
+            } catch (error) {
+                console.error('Error starting recording:', error);
+                updateStatus('Error: Could not access microphone');
+            }
+        }
+
+        async function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                
+                const btn = document.getElementById('recordBtn');
+                btn.textContent = '🎤 Start Recording';
+                btn.classList.remove('recording');
+                
+                updateStatus('Processing your voice...');
+            }
+        }
+
+        async function sendAudio(audioBlob) {
+            try {
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'recording.wav');
+                if (currentSessionId) {
+                    formData.append('session_id', currentSessionId);
+                }
+
+                updateStatus('Sending to AI...');
+                console.log('Sending audio to backend...', {
+                    audioSize: audioBlob.size,
+                    audioType: audioBlob.type,
+                    sessionId: currentSessionId
+                });
+
+                const response = await fetch('/conversation', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+
+                // Get session ID from response headers
+                const sessionId = response.headers.get('X-Session-ID');
+                const conversationEnded = response.headers.get('X-Conversation-Ended') === 'true';
+                
+                if (sessionId && sessionId !== currentSessionId) {
+                    currentSessionId = sessionId;
+                    document.getElementById('sessionId').textContent = currentSessionId.substring(0, 8) + '...';
+                }
+
+                const audioResponseBlob = await response.blob();
+                console.log('Received audio blob:', audioResponseBlob.size, 'bytes');
+                
+                const audioUrl = URL.createObjectURL(audioResponseBlob);
+                
+                const audioElement = document.getElementById('responseAudio');
+                audioElement.src = audioUrl;
+                audioElement.style.display = 'block';
+                audioElement.play();
+
+                if (conversationEnded) {
+                    updateStatus('Conversation ended. Click "New Conversation" to start again.');
+                    // Optionally disable recording button or show restart option
+                    setTimeout(() => {
+                        if (confirm('Conversation ended. Would you like to start a new conversation?')) {
+                            startNewConversation();
+                        }
+                    }, 3000);
+                } else {
+                    updateStatus('Response received! Playing audio...');
+                }
+                
+                // Load updated conversation history
+                setTimeout(() => {
+                    loadConversationHistory();
+                }, 500);
+
+            } catch (error) {
+                console.error('Detailed error:', error);
+                console.error('Error stack:', error.stack);
+                updateStatus(`Error: ${error.message}`);
+            }
+        }
+
+        async function generateSummary() {
+            if (!currentSessionId) {
+                updateStatus('No active conversation to summarize');
+                return;
+            }
+            
+            try {
+                updateStatus('🔄 Generating conversation summary...');
+                
+                const response = await fetch(`/conversations/${currentSessionId}/summary`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displaySummary(data);
+                    updateStatus('✅ Summary generated successfully!');
+                } else {
+                    updateStatus('❌ Failed to generate summary');
+                    console.error('Summary error:', data);
+                }
+            } catch (error) {
+                console.error('Error generating summary:', error);
+                updateStatus('❌ Error generating summary');
+            }
+        }
+
+        function displaySummary(summaryData) {
+            const summaryDiv = document.getElementById('conversationSummary');
+            const contentDiv = document.getElementById('summaryContent');
+            
+            const summary = summaryData.summary;
+            const metadata = summaryData.metadata;
+            
+            // Create status color based on status
+            const statusColors = {
+                'completed': '#2ed573',
+                'pending': '#ffa502',
+                'failed': '#ff4757',
+                'partially_completed': '#3742fa'
+            };
+            
+            const statusColor = statusColors[summary.status] || '#74b9ff';
+            
+            contentDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <strong>📊 Status:</strong> 
+                        <span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.9em;">
+                            ${summary.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                    </div>
+                    <div><strong>🎯 Outcome:</strong> ${summary.outcome}</div>
+                    <div><strong>📋 Category:</strong> ${summary.intent_category.replace('_', ' ')}</div>
+                    <div><strong>✅ Resolution:</strong> ${summary.resolution_level.replace('_', ' ')}</div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>🔄 Action Taken:</strong>
+                    <p style="margin: 5px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        ${summary.action_taken}
+                    </p>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>📝 Summary:</strong>
+                    <p style="margin: 5px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; font-style: italic;">
+                        ${summary.natural_summary}
+                    </p>
+                </div>
+                
+                ${summary.follow_up_required === 'yes' ? `
+                <div style="margin-bottom: 15px; padding: 10px; background: rgba(255, 193, 7, 0.2); border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <strong>⚠️ Follow-up Required:</strong>
+                    <p style="margin: 5px 0;">${summary.follow_up_details}</p>
+                </div>
+                ` : ''}
+                
+                ${summary.key_entities && Object.values(summary.key_entities).some(arr => arr.length > 0) ? `
+                <div style="margin-bottom: 15px;">
+                    <strong>🏷️ Key Information:</strong>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 8px;">
+                        ${summary.key_entities.people.length > 0 ? `<div><strong>👥 People:</strong> ${summary.key_entities.people.join(', ')}</div>` : ''}
+                        ${summary.key_entities.locations.length > 0 ? `<div><strong>📍 Locations:</strong> ${summary.key_entities.locations.join(', ')}</div>` : ''}
+                        ${summary.key_entities.dates_times.length > 0 ? `<div><strong>📅 Dates:</strong> ${summary.key_entities.dates_times.join(', ')}</div>` : ''}
+                        ${summary.key_entities.items.length > 0 ? `<div><strong>📦 Items:</strong> ${summary.key_entities.items.join(', ')}</div>` : ''}
+                        ${summary.key_entities.organizations.length > 0 ? `<div><strong>🏢 Organizations:</strong> ${summary.key_entities.organizations.join(', ')}</div>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${summary.notes ? `
+                <div style="margin-bottom: 15px;">
+                    <strong>📌 Notes:</strong>
+                    <p style="margin: 5px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.9em;">
+                        ${summary.notes}
+                    </p>
+                </div>
+                ` : ''}
+                
+                <div style="font-size: 0.8em; opacity: 0.7; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; margin-top: 15px;">
+                    <strong>📊 Metadata:</strong> 
+                    ${metadata.total_messages} messages • ${metadata.duration_minutes} minutes • 
+                    Generated at ${new Date(metadata.generated_at).toLocaleString()}
+                </div>
+            `;
+            
+            summaryDiv.style.display = 'block';
+            
+            // Scroll to summary
+            summaryDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function saveCurrentConversation() {
+            if (!currentSessionId) {
+                updateStatus('No active conversation to save');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/conversation/${currentSessionId}/save`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatus('✅ Conversation saved successfully!');
+                    console.log('Conversation saved to:', data.filepath);
+                } else {
+                    updateStatus('❌ Failed to save conversation');
+                }
+            } catch (error) {
+                console.error('Error saving conversation:', error);
+                updateStatus('❌ Error saving conversation');
+            }
+        }
+
+        // Auto-hide status after 3 seconds
+        let statusTimeout;
+        function updateStatus(message) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            
+            clearTimeout(statusTimeout);
+            statusTimeout = setTimeout(() => {
+                statusElement.textContent = '';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

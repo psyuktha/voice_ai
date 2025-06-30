@@ -1,0 +1,26 @@
+{
+  "session_id": "cb5141e6-1cd9-425c-9df3-87166d2e6903",
+  "total_messages": 2,
+  "started_at": "2025-06-30T19:39:26.827508",
+  "ended_at": "2025-06-30T19:39:30.611669",
+  "saved_at": "2025-06-30T19:40:58.799226",
+  "auto_saved": false,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello.",
+      "timestamp": "2025-06-30T19:39:26.827508"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello!  It's nice to hear from you.  How can I help you today?\n",
+      "timestamp": "2025-06-30T19:39:30.611669"
+    }
+  ],
+  "summary": {
+    "user_messages": 1,
+    "assistant_messages": 1,
+    "system_messages": 0,
+    "conversation_ended": false
+  }
+}

@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+google-generativeai
+python-multipart
+SpeechRecognition
+pyttsx3
+pyaudio
