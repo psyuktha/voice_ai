@@ -34,7 +34,7 @@ This project is a Voice AI Chatbot that can make phone calls and coordinate task
 +1 (956) 528-4589 (0019565284589 for international format)
 
 ### ⚠️ Deployment Note
-The backend server is not yet deployed. To test:
+The backend server is not yet deployed due to ongoing testing. To try:
 
 1. Use `ngrok` or `cloudflared` to expose `main.py` to the internet:
    ```
