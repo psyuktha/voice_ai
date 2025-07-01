@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Follow-Up Chatbot</title>
+  <style>
+    body {
+      font-family: Arial;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f4f4f4;
+      margin: 0;
+    }
+    #chat-container {
+      width: 400px;
+      height: 500px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      overflow-y: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .message {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .bot {
+      background-color: #e6e6e6;
+      color: #000;
+    }
+    .user {
+      background-color: #007bff;
+      color: #fff;
+      text-align: right;
+      margin-left: auto;
+    }
+    #start-form, #input-form {
+      display: flex;
+      margin-top: 10px;
+      justify-content: center;
+      gap: 10px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      flex: 1;
+    }
+    button {
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 420px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div id="chat-container"></div>
+
+    <!-- Initial query form -->
+    <form id="start-form">
+      <input type="text" id="phone" placeholder="Phone number" required />
+      <input type="text" id="query" placeholder="What do you want to ask?" required />
+      <button type="submit">Start</button>
+    </form>
+
+    <!-- Chatbot response form -->
+    <form id="input-form" style="display: none;">
+      <input type="text" id="user-input" placeholder="Answer here..." required />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    const chatContainer = document.getElementById("chat-container");
+    const inputForm = document.getElementById("input-form");
+    const startForm = document.getElementById("start-form");
+    const userInput = document.getElementById("user-input");
+    let questions = [];
+    let chatAnswers = [];
+    let index = 0;
+
+    function addMessage(text, sender) {
+      const div = document.createElement("div");
+      div.className = `message ${sender}`;
+      div.textContent = text;
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    startForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const phone = document.getElementById("phone").value;
+      const query = document.getElementById("query").value;
+
+      const formData = new FormData();
+      formData.append("phone_number", phone);
+      formData.append("query", query);
+      console.log("Sending data:", phone, query);
+
+      const res = await fetch("/process", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      console.log("Response data:", data);
+      questions = data.follow_up_questions || [];
+
+      if (questions.length > 0) {
+        startForm.style.display = "none";
+        inputForm.style.display = "flex";
+        addMessage(questions[index], "bot");
+      } else {
+        addMessage("No follow-up questions found.", "bot");
+      }
+    });
+
+    inputForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const answer = userInput.value.trim();
+      if (answer) {
+        addMessage(answer, "user");
+        chatAnswers.push(answer);
+        userInput.value = "";
+        index++;
+
+        if (index < questions.length) {
+          setTimeout(() => addMessage(questions[index], "bot"), 500);
+        } else {
+          addMessage("Thanks! You've answered all the questions.", "bot");
+          inputForm.style.display = "none";
+
+          // Save full history
+          const payload = {
+            phone_number: document.getElementById("phone").value,
+            query: document.getElementById("query").value,
+            follow_up_questions: questions.map((q, i) => ({
+              question: q,
+              answer: chatAnswers[i] || ""
+            }))
+          };
+
+          console.log("📦 Saving history:", payload);
+
+          await fetch("/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
