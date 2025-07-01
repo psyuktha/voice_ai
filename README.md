@@ -1,6 +1,6 @@
-# Voice AI Coordination Tool
+# Voice AI Agent
 
-This project is a Voice AI Chatbot that can make phone calls and coordinate tasks on behalf of users using two different approaches:
+This project is a Voice Assistant that can make phone calls and coordinate tasks on behalf of users using two different approaches:
 
 - Vapi Voice Agent Workflow
 - Gemini Vertex AI Voice Agent
@@ -38,44 +38,7 @@ To test the full experience, place a call to:
 ### ☎️ Test Number
 +1 (956) 528-4589 (0019565284589 for international format)
 
-## 🌐 2. Using LLM as agent and tts,stt
-
-### ✅ Features
-- Uses Gemini from Vertex AI for intent parsing and natural language interaction.
-- Ideal for more complex or dynamic voice tasks.
-
-### 📂 Directory
-All Gemini-related code is contained in:
-
-```
-gemini_voice_agent/
-```
-
-This includes:
-
-- Prompt engineering
-- Intent classification
-- Entity extraction
-- Call logic orchestration
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Python 3.8+
-- Vapi account (for Approach 1)
-- Google Cloud account with Gemini access (for Approach 2)
-
-### Install Dependencies
-```
-pip install fastapi uvicorn requests
-```
-
-### Run FastAPI Server
-```
-uvicorn main:app --reload
-```
-Then expose it using `ngrok` or `cloudflared`.
-
+### Post Call Summary
 ## 📘 Sample Summary (`response.json`)
 
 ```json
@@ -94,5 +57,29 @@ Then expose it using `ngrok` or `cloudflared`.
 }
 ]
 ```
+
+## 🌐 2. Using LLM as agent and tts,stt
+
+### ✅ Features
+- Uses Gemini from Vertex AI for intent parsing and natural language interaction.
+- Ideal for more complex or dynamic voice tasks.
+
+### 📂 Directory
+All LLM-related code is contained in:
+
+```
+gemini_voice_agent/
+```
+
+This includes:
+
+- Intent classification
+- Entity extraction
+- Voice assistant chatbot
+- save chat history
+- summarise chat history
+
+
+
 
 
