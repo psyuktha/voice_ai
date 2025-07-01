@@ -4,6 +4,7 @@ import json
 import google.generativeai as genai  # Assuming you're using Google Gemini
 from dotenv import load_dotenv
 import os   
+import uvicorn
 
 load_dotenv()  # Load environment variables from .env file
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # Get your Gemini API key from .env
@@ -88,3 +89,7 @@ def refine_prompt(raw_intent: str):
 @app.post("/get_intent_details")
 async def get_intent_details(input: IntentInput):
     return refine_prompt(input.raw_intent)
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
