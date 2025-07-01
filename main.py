@@ -91,5 +91,7 @@ async def get_intent_details(input: IntentInput):
     return refine_prompt(input.raw_intent)
 
 if __name__ == "__main__":
+    import os
+    import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
