@@ -6,4 +6,3 @@ google-generativeai
 python-multipart
 SpeechRecognition
 pyttsx3
-pyaudio
