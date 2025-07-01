@@ -5,6 +5,11 @@ This project is a Voice AI Chatbot that can make phone calls and coordinate task
 - Vapi Voice Agent Workflow
 - Gemini Vertex AI Voice Agent
 
+## 📞 Demo Call
+
+To test the full experience, place a call to:
++1 (956) 528-4589 (or 0019565284589 internationally)
+
 ## 🔁 Project Structure
 
 ```
@@ -90,8 +95,4 @@ Then expose it using `ngrok` or `cloudflared`.
 ]
 ```
 
-## 📞 Demo Call
-
-To test the full experience, place a call to:
-+1 (956) 528-4589 (or 0019565284589 internationally)
 
