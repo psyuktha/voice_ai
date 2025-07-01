@@ -95,6 +95,3 @@ Then expose it using `ngrok` or `cloudflared`.
 To test the full experience, place a call to:
 +1 (956) 528-4589 (or 0019565284589 internationally)
 
-## 📌 TODO
-
-- Deploy FastAPI server to a stable cloud endpoint (Render, Railway, or GCP).
