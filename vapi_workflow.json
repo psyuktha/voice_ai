@@ -41,7 +41,7 @@
         }
       },
       "tool": {
-        "url": "https://certain-warriors-promises-spider.trycloudflare.com/get_intent_details",
+        "url": "https://voice-ai-egk4.onrender.com/get_intent_details",
         "body": {
           "type": "object",
           "required": [],
@@ -111,7 +111,7 @@
         }
       },
       "tool": {
-        "url": "https://certain-warriors-promises-spider.trycloudflare.com/summarize",
+        "url": "https://voice-ai-egk4.onrender.com/summarize",
         "body": {
           "type": "object",
           "required": [],
