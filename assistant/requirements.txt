@@ -3,8 +3,4 @@ uvicorn
 python-dotenv
 requests
 google-generativeai
-python-multipart
-SpeechRecognition
-pyttsx3
 jinja2
-pydantic
