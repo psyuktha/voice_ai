@@ -3,88 +3,367 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Follow-Up Chatbot</title>
+  <title>AI Voice Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background: #f4f4f4;
-      margin: 0;
-    }
-    #chat-container {
-      width: 400px;
-      height: 500px;
-      background: white;
       padding: 20px;
-      border-radius: 10px;
-      overflow-y: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    .message {
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 5px;
-    }
-    .bot {
-      background-color: #e6e6e6;
-      color: #000;
-    }
-    .user {
-      background-color: #007bff;
-      color: #fff;
-      text-align: right;
-      margin-left: auto;
-    }
-    #start-form, #input-form {
-      display: flex;
-      margin-top: 10px;
-      justify-content: center;
-      gap: 10px;
-    }
-    input[type="text"] {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      flex: 1;
-    }
-    button {
-      padding: 10px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
+
     .wrapper {
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 420px;
+      width: 100%;
+      max-width: 500px;
+      gap: 20px;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 10px;
+    }
+
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header p {
+      font-size: 1rem;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    #chat-container {
+      width: 100%;
+      height: 500px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 24px;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      position: relative;
+    }
+
+    #chat-container::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #chat-container::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.05);
+      border-radius: 3px;
+    }
+
+    #chat-container::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.2);
+      border-radius: 3px;
+    }
+
+    #chat-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(0,0,0,0.3);
+    }
+
+    .message {
+      margin: 16px 0;
+      padding: 16px 20px;
+      border-radius: 18px;
+      max-width: 85%;
+      word-wrap: break-word;
+      animation: fadeInUp 0.3s ease-out;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .bot {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .user {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+    }
+
+    .form-container {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+
+    #start-form, #input-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    input[type="text"] {
+      padding: 16px 20px;
+      border: 2px solid rgba(0,0,0,0.08);
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      background: white;
+      transition: all 0.2s ease;
+      flex: 1;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      transform: translateY(-1px);
+    }
+
+    input[type="text"]::placeholder {
+      color: rgba(0,0,0,0.5);
+      font-weight: 400;
+    }
+
+    button {
+      padding: 16px 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    #goto-voice {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+      margin-top: 12px;
+      width: 100%;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    #goto-voice:hover {
+      box-shadow: 0 8px 20px rgba(79, 172, 254, 0.4);
+    }
+
+    .typing-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 20px;
+      margin: 16px 0;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 18px;
+      max-width: 85%;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: #667eea;
+      border-radius: 50%;
+      animation: typingAnimation 1.4s infinite;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typingAnimation {
+      0%, 60%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+      }
+      30% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      color: rgba(0,0,0,0.4);
+      padding: 60px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      opacity: 0.3;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .completion-message {
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+      border-radius: 16px;
+      margin: 16px 0;
+      box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+      font-weight: 500;
+    }
+
+    @media (max-width: 600px) {
+      .wrapper {
+        max-width: 100%;
+        padding: 0 10px;
+      }
+      
+      #chat-container {
+        height: 400px;
+        padding: 16px;
+      }
+      
+      .form-container {
+        padding: 16px;
+      }
+      
+      .input-row {
+        flex-direction: column;
+      }
+      
+      .header h1 {
+        font-size: 1.8rem;
+      }
     }
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <div id="chat-container"></div>
+    <div class="header">
+      <h1>🤖 AI Voice Assistant</h1>
+      <p>Get personalized help with intelligent conversation</p>
+    </div>
 
-    <!-- Initial query form -->
-    <form id="start-form">
-      <input type="text" id="phone" placeholder="Phone number" required />
-      <input type="text" id="query" placeholder="What do you want to ask?" required />
-      <button type="submit">Start</button>
-    </form>
+    <div id="chat-container">
+      <div class="empty-state">
+        <div class="empty-state-icon">💬</div>
+        <p>Start a conversation to get personalized assistance</p>
+      </div>
+    </div>
 
-    <!-- Chatbot response form -->
-    <form id="input-form" style="display: none;">
-      <input type="text" id="user-input" placeholder="Answer here..." required />
-      <button type="submit">Send</button>
-    </form>
+    <div class="form-container">
+      <!-- Initial query form -->
+      <form id="start-form">
+        <div class="input-row">
+          <input type="text" id="phone" placeholder="📱 Phone number" required />
+          <input type="text" id="query" placeholder="💭 What can I help you with?" required />
+        </div>
+        <button type="submit">Start Conversation</button>
+      </form>
+
+      <!-- Chatbot response form -->
+      <form id="input-form" style="display: none;">
+        <input type="text" id="user-input" placeholder="Type your answer here..." required />
+        <button type="submit">Send Message</button>
+      </form>
+
+      <!-- Progress bar -->
+      <div class="progress-bar" id="progress-bar" style="display: none;">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <!-- Button to go to Voice Interface -->
+      <button id="goto-voice" onclick="window.location.href='http://localhost:5173'" style="display: none;">
+        🎤 Continue with Voice Chat
+      </button>
+    </div>
+
+    <!-- Typing indicator -->
+    <div class="typing-indicator" id="typing-indicator">
+      <span>AI is thinking</span>
+      <div class="typing-dots">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -92,15 +371,50 @@
     const inputForm = document.getElementById("input-form");
     const startForm = document.getElementById("start-form");
     const userInput = document.getElementById("user-input");
+    const typingIndicator = document.getElementById("typing-indicator");
+    const progressBar = document.getElementById("progress-bar");
+    const progressFill = document.getElementById("progress-fill");
+    const gotoVoiceBtn = document.getElementById("goto-voice");
+    const emptyState = document.querySelector(".empty-state");
+    
     let questions = [];
     let chatAnswers = [];
     let index = 0;
 
     function addMessage(text, sender) {
+      // Remove empty state on first message
+      if (emptyState) {
+        emptyState.remove();
+      }
+
       const div = document.createElement("div");
       div.className = `message ${sender}`;
       div.textContent = text;
       chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+      typingIndicator.style.display = "flex";
+    }
+
+    function hideTypingIndicator() {
+      typingIndicator.style.display = "none";
+    }
+
+    function updateProgress() {
+      const progress = ((index + 1) / questions.length) * 100;
+      progressFill.style.width = `${progress}%`;
+    }
+
+    function showCompletionMessage() {
+      const completionDiv = document.createElement("div");
+      completionDiv.className = "completion-message";
+      completionDiv.innerHTML = `
+        <strong>🎉 All questions answered!</strong><br>
+        <small>Your conversation has been saved. You can now continue with voice chat.</small>
+      `;
+      chatContainer.appendChild(completionDiv);
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
@@ -109,26 +423,43 @@
       const phone = document.getElementById("phone").value;
       const query = document.getElementById("query").value;
 
+      // Show user's initial query
+      addMessage(`📱 ${phone}`, "user");
+      addMessage(query, "user");
+      
+      showTypingIndicator();
+
       const formData = new FormData();
       formData.append("phone_number", phone);
       formData.append("query", query);
-      console.log("Sending data:", phone, query);
 
-      const res = await fetch("/process", {
-        method: "POST",
-        body: formData
-      });
+      try {
+        const res = await fetch("/process", {
+          method: "POST",
+          body: formData
+        });
 
-      const data = await res.json();
-      console.log("Response data:", data);
-      questions = data.follow_up_questions || [];
+        const data = await res.json();
+        questions = data.follow_up_questions || [];
 
-      if (questions.length > 0) {
-        startForm.style.display = "none";
-        inputForm.style.display = "flex";
-        addMessage(questions[index], "bot");
-      } else {
-        addMessage("No follow-up questions found.", "bot");
+        hideTypingIndicator();
+
+        if (questions.length > 0) {
+          startForm.style.display = "none";
+          inputForm.style.display = "flex";
+          progressBar.style.display = "block";
+          updateProgress();
+          
+          setTimeout(() => {
+            addMessage(questions[index], "bot");
+          }, 300);
+        } else {
+          addMessage("✅ No follow-up questions needed. Your request is complete!", "bot");
+          gotoVoiceBtn.style.display = "block";
+        }
+      } catch (error) {
+        hideTypingIndicator();
+        addMessage("❌ Sorry, there was an error processing your request. Please try again.", "bot");
       }
     });
 
@@ -141,13 +472,26 @@
         userInput.value = "";
         index++;
 
-        if (index < questions.length) {
-          setTimeout(() => addMessage(questions[index], "bot"), 500);
-        } else {
-          addMessage("Thanks! You've answered all the questions.", "bot");
-          inputForm.style.display = "none";
+        updateProgress();
 
-          // Save full history
+        if (index < questions.length) {
+          showTypingIndicator();
+          setTimeout(() => {
+            hideTypingIndicator();
+            addMessage(questions[index], "bot");
+          }, 800);
+        } else {
+          showTypingIndicator();
+          
+          setTimeout(() => {
+            hideTypingIndicator();
+            showCompletionMessage();
+            inputForm.style.display = "none";
+            progressBar.style.display = "none";
+            gotoVoiceBtn.style.display = "block";
+          }, 1000);
+
+          // Save the conversation
           const payload = {
             phone_number: document.getElementById("phone").value,
             query: document.getElementById("query").value,
@@ -157,14 +501,27 @@
             }))
           };
 
-          console.log("📦 Saving history:", payload);
-
-          await fetch("/save", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
+          try {
+            await fetch("/save", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          } catch (error) {
+            console.error("Error saving conversation:", error);
+          }
         }
+      }
+    });
+
+    // Auto-focus on input fields
+    document.getElementById("phone").focus();
+    
+    // Handle Enter key in input fields
+    userInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        inputForm.dispatchEvent(new Event("submit"));
       }
     });
   </script>
