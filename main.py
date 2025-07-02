@@ -1,18 +1,15 @@
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 import json
-import google.generativeai as genai  # Assuming you're using Google Gemini
+import google.generativeai as genai  
 from dotenv import load_dotenv
 import os   
 import uvicorn
 
-load_dotenv()  # Load environment variables from .env file
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # Get your Gemini API key from .env
-# Initialize your Gemini API key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  
 
-genai.configure(api_key=GEMINI_API_KEY)  # Set your Gemini API key from .env
+genai.configure(api_key=GEMINI_API_KEY)  
 
-# Define your Gemini prompt template
 GEMINI_PROMPT_TEMPLATE = """
 You are a prompt refinement assistant for a voice AI agent. Given a raw user command, do the following:
 1. Convert it into a natural voice agent prompt.
@@ -52,9 +49,10 @@ app = FastAPI()
 # Input schema
 class IntentInput(BaseModel):
     raw_intent: str
-    phone_number: str = None  # Optional, can be used if needed
+
 class ConversationInput(BaseModel):
     conversation: str
+
 @app.post("/summarize")
 def summarize_conversation(input: ConversationInput):
     try:
@@ -73,7 +71,6 @@ def summarize_conversation(input: ConversationInput):
         return raw_text
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-# Function to call Gemini and refine prompt
 def refine_prompt(raw_intent: str):
     try:
         model = genai.GenerativeModel('gemini-2.0-flash')

@@ -1,0 +1,26 @@
+{
+  "session_id": "5b54a88d-6f65-41fe-82ca-7767a74b1a6d",
+  "total_messages": 2,
+  "started_at": "2025-07-01T18:55:16.099445",
+  "ended_at": "2025-07-01T18:55:28.989915",
+  "saved_at": "2025-07-01T18:58:56.818742",
+  "auto_saved": false,
+  "messages": [
+    {
+      "role": "user",
+      "content": "(hands rubbing together)",
+      "timestamp": "2025-07-01T18:55:16.099445"
+    },
+    {
+      "role": "assistant",
+      "content": "Well, I can't actually *feel* anything, so the hand-rubbing was just a description of your action, I assume!  I was trying to imagine what you might be thinking, given that gesture often suggests anticipation or excitement about something.  \n\nSo, what's up?  What can I help you with today?  Is there a particular task or question you have?\n",
+      "timestamp": "2025-07-01T18:55:28.989915"
+    }
+  ],
+  "summary": {
+    "user_messages": 1,
+    "assistant_messages": 1,
+    "system_messages": 0,
+    "conversation_ended": false
+  }
+}

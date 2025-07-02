@@ -113,3 +113,16 @@
   "natural_language_summary": "The user called to schedule a trip to Mars. They plan to stay for one month, beginning on July 2nd, at the Pluto Hotel and have no specific room preferences."
 }
 ```
+{
+  "intent": "Finding Lost Items",
+  "entities": {
+    "item": "black jacket",
+    "location": "Phoenix Mall of Asia",
+    "time": "6:30 PM",
+    "date": "today"
+  },
+  "status": "Item search initiated",
+  "action_taken": "Initiated lost item search based on user description and location.",
+  "notes": "Need to check lost and found at Phoenix Mall of Asia for a black jacket left around 6:30 PM today.",
+  "natural_language_summary": "The user called to inquire about a lost black jacket. They believe they left it at the Phoenix Mall of Asia around 6:30 PM today. A search for the jacket will be conducted."
+}

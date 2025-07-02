@@ -41,23 +41,22 @@ async def home(request: Request):
 
 GEMINI_PROMPT_TEMPLATE = """
 You are a prompt refinement assistant for a voice AI agent. Given a raw user command, do the following:
-1. Convert it into a natural voice agent prompt.
-2. Extract all possible entities from the user input. Use these keys:
-   - user_name
+1. Extract all possible entities from the user input. Use these keys:
    - target_name
    - location
    - time
    - item
    - intent_category (choose from: Inquiry, Appointment, Rescheduling, Finding Lost Items, Follow-up)
-   - follow_up_questions (if any)
-   Add possible follow-up questions that might be needed to clarify the user's intent. if any entities are missing, include them in the follow-up questions.
-   add atleast one follow up question.
+   - quantity (if applicable)
+   - number of people (if applicable for appointments or scheduled events)
+2. follow_up_questions 
+   Add all possible follow-up questions that might be needed to clarify the user's intent. if any entities are missing, include them in the follow-up questions. Do not ask users name.
 If it is an impossible event like a visit to another planet, return a message saying "This is not possible" and do not generate any entities or follow-up questions.
 Respond a JSON object without any '```json ```' backticks with the following:
-- refined_prompt
 - entities (dictionary)
 - follow_up_questions (array of strings)
 """
+refined=[]
 @app.post("/process")
 async def process(request: Request, phone_number: str = Form(...), query: str = Form(...)):
     try:
@@ -70,8 +69,9 @@ async def process(request: Request, phone_number: str = Form(...), query: str = 
         cleaned = re.sub(r'```json|```', '', response.text).strip()
         parsed = json.loads(cleaned)
         print(parsed)
-        followups = parsed.get("follow_up_questions", [])
-
+        refined.append(parsed.get("entities"))
+        followups = parsed.get("follow_up_questions")
+        print(f"Follow-up questions: {followups}")
         return JSONResponse(content={"follow_up_questions": followups})
     except Exception as e:
         return JSONResponse(content={"follow_up_questions": [], "error": str(e)}, status_code=500)
@@ -93,6 +93,28 @@ import json
 
 @app.post("/save")
 async def save_chat(data: ChatHistory):
-    with open("chat_log.json", "a") as f:
-        f.write(json.dumps(data.dict()) + "\n")
-    return json.load(open("chat_log.json"))
+    final=data.dict()
+    print(final)
+    final.update({"entities": refined})
+    chat_log.append(final)
+    print(f"Chat log updated: {chat_log}")
+    return json.dumps(final, indent=4)
+
+@app.get("/context")
+async def get_context():
+    print(f"Chat log: {chat_log}")
+    if not chat_log:
+        return JSONResponse(content={"error": "No context available yet."}, status_code=404)
+    model = genai.GenerativeModel("gemini-2.0-flash")
+    context= json.dumps(chat_log[-1], indent=4)
+    print(context)
+    prompt = f"""You are an assistant that summarizes phone call conversations.
+
+    Find out the final task the assistant needs to perform based on the conversation history.
+
+    Conversation history:
+    {context}
+    """
+    # return JSONResponse(content=chat_log[-1])
+    response = model.generate_content(prompt)
+    return response.text
