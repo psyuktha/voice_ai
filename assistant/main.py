@@ -8,40 +8,32 @@ import json
 import re
 import os
 import requests
-import httpx  # ✅ required for async call to Vapi
-
+import httpx  
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import List
 
-# Load environment variables
 load_dotenv()
 
-# Configure APIs
 vapi_key = os.getenv("VAPI_API_KEY")
 assistant_id = os.getenv("VAPI_ASSISTANT_ID")
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# App init
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Or ["*"] for all origins
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# Templates
 templates = Jinja2Templates(directory="templates")
 
-# Global states
 active_connection = None
 refined = []
 chat_log = []
 
-# WebSocket endpoint
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     global active_connection
@@ -50,56 +42,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            msg = await websocket.receive_text()
-            print(f"📩 WebSocket received: {msg}")
-            if msg == "get-call-summary":
-                await new()
+            await websocket.receive_text()
     except Exception as e:
         print(f"⚠️ WebSocket disconnected: {e}")
-
-def new():
-    print("Fetching new call summary...")
-    requests.get("https://qualifying-arrive-aurora-department.trycloudflare.com/get-call-summary")
-# Get call summary from Vapi and send it via WebSocket
-async def fetch_and_send_call_summary():
-    try:
-
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://api.vapi.ai/call",
-                headers={"Authorization": f"Bearer {vapi_key}"}
-            )
-            response.raise_for_status()
-
-        summary_str = response.json()[0].get("summary")
-        print(f"📄 Raw Summary: ",response.json()[1])
-        summary = json.loads(summary_str)
-        print(f"Call summary: {summary_str}")
-
-        if active_connection:
-            await active_connection.send_text(summary_str)
-            print(f"✅ Sent summary to client")
-
-        return summary_str
-
-        summary_str = call_data[0]
-        print(f"📄 Raw Summary: {summary_str}")
-
-        try:
-            summary = json.loads(summary_str)  # Ensure it's valid JSON
-        except json.JSONDecodeError:
-            print("⚠️ Failed to parse summary JSON")
-            summary = {"error": "Invalid summary JSON from Vapi"}
-
-        if active_connection:
-            await active_connection.send_text(json.dumps(summary))
-            print(f"✅ Sent summary via WebSocket")
-        else:
-            print("⚠️ No active WebSocket to send summary.")
-
-    except Exception as e:
-        print(f"❌ Error fetching call summary: {e}")
-
 
 @app.get("/get-call-summary")
 async def get_call_summary():
@@ -125,7 +70,6 @@ async def get_call_summary():
     except Exception as e:
         print(f"❌ Error fetching summary: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
-# Trigger call from backend via WebSocket
 @app.post("/start-call")
 async def start_call():
     if active_connection:
@@ -133,7 +77,6 @@ async def start_call():
         return {"status": "trigger sent"}
     return {"error": "no client connected"}
 
-# Gemini prompt for follow-up generation
 GEMINI_PROMPT_TEMPLATE = """
 You are a prompt refinement assistant for a voice AI agent. Given a raw user command, do the following:
 1. Extract all possible entities from the user input. Use these keys:
@@ -163,7 +106,7 @@ async def process(request: Request, phone_number: str = Form(...), query: str = 
         parsed = json.loads(cleaned)
 
         print(parsed)
-        refined.clear()  # ✅ clear previous entities
+        refined.clear()  
         refined.append(parsed.get("entities"))
         followups = parsed.get("follow_up_questions")
 
@@ -172,7 +115,7 @@ async def process(request: Request, phone_number: str = Form(...), query: str = 
     except Exception as e:
         return JSONResponse(content={"follow_up_questions": [], "error": str(e)}, status_code=500)
 
-# Models
+
 class QAItem(BaseModel):
     question: str
     answer: str
@@ -182,7 +125,6 @@ class ChatHistory(BaseModel):
     query: str
     follow_up_questions: List[QAItem]
 
-# Save chat log
 @app.post("/save")
 async def save_chat(data: ChatHistory):
     final = data.dict()
@@ -191,7 +133,6 @@ async def save_chat(data: ChatHistory):
     print(f"📝 Chat log updated")
     return json.dumps(final, indent=4)
 
-# Generate post-call context summary
 @app.get("/context")
 async def get_context():
     if not chat_log:
@@ -211,12 +152,11 @@ async def get_context():
     response = model.generate_content(prompt)
     return response.text
 
-# Serve the main UI
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Optional call-specific page
 @app.get("/call-ui", response_class=HTMLResponse)
 async def call_ui(request: Request):
     return templates.TemplateResponse("index.html", {
@@ -224,6 +164,3 @@ async def call_ui(request: Request):
         "vapi_key": vapi_key,
         "assistant_id": assistant_id
     })
-
-if __name__ == "__main__":
-    new()
