@@ -49,6 +49,7 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.get("/get-call-summary")
 async def get_call_summary():
     try:
+        print(vapi_key[:5]+"..."+vapi_key[-5:])  # Print first and last 5 characters of vapi_key
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 "https://api.vapi.ai/call",
