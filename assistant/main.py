@@ -164,3 +164,8 @@ async def call_ui(request: Request):
         "vapi_key": vapi_key,
         "assistant_id": assistant_id
     })
+if __name__ == "__main__":
+    import os
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
